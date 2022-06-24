@@ -1,0 +1,16 @@
+server:
+  port: 9000
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: products
+          uri: https://dummyjson.com/products
+          predicates:
+            - Path=/products
+          filters:
+            - StripPrefix=0
+
+  graphql:
+    graphiql:
+      enabled: true

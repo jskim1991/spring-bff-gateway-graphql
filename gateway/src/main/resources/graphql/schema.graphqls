@@ -1,0 +1,19 @@
+type Query {
+    movieInfos: [MovieInfo]
+}
+
+type MovieInfo {
+    movieInfoId: ID
+    name: String
+    year: Int
+    cast: [String]
+    release_date: String
+    reviews: [Review]
+}
+
+type Review {
+    reviewId: ID
+    movieInfoId: Int
+    comment: String
+    rating: Float
+}

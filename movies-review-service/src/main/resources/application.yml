@@ -1,0 +1,15 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: reviews-service
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: movie
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.ReactiveMongoTemplate: DEBUG
