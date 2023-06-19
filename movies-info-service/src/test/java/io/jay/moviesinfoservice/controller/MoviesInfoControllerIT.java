@@ -1,5 +1,6 @@
 package io.jay.moviesinfoservice.controller;
 
+import io.jay.moviesinfoservice.configuration.TestMongoContainerConfiguration;
 import io.jay.moviesinfoservice.domain.MovieInfo;
 import io.jay.moviesinfoservice.repository.MovieInfoRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -21,7 +23,7 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@TestPropertySource(properties = "spring.mongodb.embedded.version=3.5.5")
+@Import(TestMongoContainerConfiguration.class)
 class MoviesInfoControllerIT {
 
     @Autowired

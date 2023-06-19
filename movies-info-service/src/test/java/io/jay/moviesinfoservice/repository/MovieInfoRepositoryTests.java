@@ -1,23 +1,25 @@
 package io.jay.moviesinfoservice.repository;
 
+import io.jay.moviesinfoservice.configuration.TestReactiveMongoTemplateConfiguration;
 import io.jay.moviesinfoservice.domain.MovieInfo;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.context.annotation.Import;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 @DataMongoTest
-@ExtendWith(SpringExtension.class)
+@Import(TestReactiveMongoTemplateConfiguration.class)
 public class MovieInfoRepositoryTests {
 
     @Autowired
@@ -25,6 +27,9 @@ public class MovieInfoRepositoryTests {
 
     @BeforeEach
     void setup() {
+        movieInfoRepository.deleteAll()
+                .block();
+
         var movieInfos = List.of(
                 new MovieInfo(null, "Batman Begins", 2005, List.of("Christian Bale"), LocalDate.parse("2005-06-15")),
                 new MovieInfo(null, "The Dark Knight", 2008, List.of("Christian Bale"), LocalDate.parse("2008-07-18")),
@@ -32,12 +37,6 @@ public class MovieInfoRepositoryTests {
         );
         movieInfoRepository.saveAll(movieInfos)
                 .blockLast(); // to make sure data is saved before start of tests
-    }
-
-    @AfterEach
-    void tearDown() {
-        movieInfoRepository.deleteAll()
-                .block();
     }
 
     @Test

@@ -3,8 +3,10 @@ package io.jay.moviesreviewservice.handler;
 import io.jay.moviesreviewservice.domain.Review;
 import io.jay.moviesreviewservice.exception.ReviewDataException;
 import io.jay.moviesreviewservice.repository.ReviewReactiveRepository;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.ParameterizedTypeReference;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -13,12 +15,10 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ReviewHandler {
@@ -64,8 +64,8 @@ public class ReviewHandler {
     public Mono<ServerResponse> updateReview(ServerRequest request) {
         String id = request.pathVariable("id");
         var existingReview = repository.findById(id);
-                /* option 1 for handling 404 */
-                // .switchIfEmpty(Mono.error(new ReviewNotFoundException("Review not found for " + id)));
+        /* option 1 for handling 404 */
+        // .switchIfEmpty(Mono.error(new ReviewNotFoundException("Review not found for " + id)));
 
         return existingReview
                 .flatMap(review -> request.bodyToMono(Review.class)
@@ -95,6 +95,11 @@ public class ReviewHandler {
     }
 
     public Mono<ServerResponse> getReviewList(ServerRequest serverRequest) {
+        String[] b3Header = serverRequest.headers().firstHeader("b3").split("-");
+        var traceId = b3Header[0];
+        var spanId = b3Header[1];
+
+        log.info("[{},{}] Starting to get reviews for movieInfoIds", traceId, spanId);
         return serverRequest.bodyToFlux(Long.class)
                 .collectList()
                 .flatMap(list -> {

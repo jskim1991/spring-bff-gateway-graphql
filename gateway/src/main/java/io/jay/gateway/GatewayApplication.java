@@ -1,5 +1,9 @@
 package io.jay.gateway;
 
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -8,20 +12,36 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.reactive.function.client.support.WebClientAdapter;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.PostExchange;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+interface MovieInfoHttpClient {
+    @GetExchange("/v1/movieinfos")
+    Flux<MovieInfo> getMovies();
+}
+
+interface MovieReviewsHttpClient {
+    @PostExchange("/v1/reviews/list")
+    Flux<MovieReview> getReviews(@RequestBody List<Long> movieInfoIds);
+}
+
 @SpringBootApplication
 public class GatewayApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(GatewayApplication.class, args);
+        Hooks.enableAutomaticContextPropagation();
     }
 
     @Bean
@@ -37,15 +57,38 @@ public class GatewayApplication {
     public WebClient webClient(WebClient.Builder builder) {
         return builder.build();
     }
+
+    @Bean
+    public MovieInfoHttpClient movieInfoHttpProxy(WebClient.Builder builder) {
+        var wca = WebClientAdapter.forClient(builder.baseUrl("http://localhost:8080").build());
+        return HttpServiceProxyFactory.builder()
+                .clientAdapter(wca)
+                .build()
+                .createClient(MovieInfoHttpClient.class);
+    }
+
+    @Bean
+    public MovieReviewsHttpClient movieReviewsHttpProxy(WebClient.Builder builder) {
+        var wca = WebClientAdapter.forClient(builder.baseUrl("http://localhost:8081").build());
+        return HttpServiceProxyFactory.builder()
+                .clientAdapter(wca)
+                .build()
+                .createClient(MovieReviewsHttpClient.class);
+    }
 }
 
 @Controller
 class GatewayController {
 
-    private final WebClient webClient;
+    private final MovieInfoHttpClient movieInfoHttpClient;
+    private final MovieReviewsHttpClient movieReviewsHttpClient;
+    private final ObservationRegistry registry;
+    Logger log = LoggerFactory.getLogger(GatewayController.class);
 
-    public GatewayController(WebClient webClient) {
-        this.webClient = webClient;
+    public GatewayController(MovieInfoHttpClient movieInfoHttpClient, MovieReviewsHttpClient movieReviewsHttpClient, ObservationRegistry registry) {
+        this.movieInfoHttpClient = movieInfoHttpClient;
+        this.movieReviewsHttpClient = movieReviewsHttpClient;
+        this.registry = registry;
     }
 
     @BatchMapping(typeName = "MovieInfo")
@@ -54,7 +97,7 @@ class GatewayController {
                 .map(movieInfo -> Long.parseLong(movieInfo.movieInfoId()))
                 .collect(Collectors.toList());
 
-        var reviews = fetchReviewList(movieInfoIds);
+        var reviews = movieReviewsHttpClient.getReviews(movieInfoIds);
 
         return reviews.collectList()
                 .map(movieReviews -> {
@@ -69,28 +112,9 @@ class GatewayController {
 
     @QueryMapping
     public Flux<MovieInfo> movieInfos() {
-        return webClient.get()
-                .uri("http://localhost:8080/v1/movieinfos")
-                .retrieve()
-                .bodyToFlux(MovieInfo.class);
-    }
-
-    private Flux<MovieReview> fetchReviews(String movieInfoId) {
-        return webClient.get()
-                .uri(UriComponentsBuilder.fromHttpUrl("http://localhost:8081/v1/reviews")
-                        .queryParam("movieInfoId", Long.parseLong(movieInfoId))
-                        .buildAndExpand()
-                        .toUri())
-                .retrieve()
-                .bodyToFlux(MovieReview.class);
-    }
-
-    private Flux<MovieReview> fetchReviewList(List<Long> movieInfoIds) {
-        return webClient.post()
-                .uri("http://localhost:8081/v1/reviews/list")
-                .bodyValue(movieInfoIds)
-                .retrieve()
-                .bodyToFlux(MovieReview.class);
+        log.info("Starting to fetch movie infos");
+        return Observation.createNotStarted("movieInfos", this.registry)
+                .observe(movieInfoHttpClient::getMovies);
     }
 }
 
