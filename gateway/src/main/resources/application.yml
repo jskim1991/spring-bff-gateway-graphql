@@ -3,15 +3,15 @@ server:
 spring:
   application:
     name: gateway
-  cloud:
-    gateway:
-      routes:
-        - id: products
-          uri: https://dummyjson.com/products
-          predicates:
-            - Path=/products
-          filters:
-            - StripPrefix=0
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: products
+#          uri: https://dummyjson.com/products
+#          predicates:
+#            - Path=/products
+#          filters:
+#            - StripPrefix=0
 
   graphql:
     graphiql:
@@ -25,7 +25,8 @@ logging:
 management:
   tracing:
     propagation:
-      type: b3
+      type: w3c
+
   endpoints:
     web:
       exposure:

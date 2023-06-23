@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.gateway.route.RouteLocator;
-import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -40,18 +38,18 @@ interface MovieReviewsHttpClient {
 public class GatewayApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(GatewayApplication.class, args);
         Hooks.enableAutomaticContextPropagation();
+        SpringApplication.run(GatewayApplication.class, args);
     }
 
-    @Bean
-    public RouteLocator routes(RouteLocatorBuilder builder) {
-        return builder.routes()
-                .route(p -> p.path("/products-java")
-                        .filters(f -> f.setPath("/products"))
-                        .uri("https://dummyjson.com"))
-                .build();
-    }
+//    @Bean
+//    public RouteLocator routes(RouteLocatorBuilder builder) {
+//        return builder.routes()
+//                .route(p -> p.path("/products-java")
+//                        .filters(f -> f.setPath("/products"))
+//                        .uri("https://dummyjson.com"))
+//                .build();
+//    }
 
     @Bean
     public WebClient webClient(WebClient.Builder builder) {

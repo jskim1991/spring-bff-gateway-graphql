@@ -4,7 +4,8 @@ import io.jay.moviesinfoservice.domain.MovieInfo;
 import io.jay.moviesinfoservice.service.MoviesInfoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,23 +15,21 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
-import java.util.Map;
-import java.util.Optional;
-
-@Slf4j
 @RestController
 @RequestMapping("/v1/movieinfos")
 @RequiredArgsConstructor
 public class MoviesInfoController {
+
+    Logger log = LoggerFactory.getLogger(MoviesInfoController.class);
 
     private final MoviesInfoService moviesInfoService;
     private Sinks.Many<MovieInfo> moviesInfoSink = Sinks.many().replay().latest();
@@ -43,16 +42,8 @@ public class MoviesInfoController {
     }
 
     @GetMapping("")
-    public Flux<MovieInfo> getAllMovieInfos(@RequestParam(value = "year", required = false) Integer year, @RequestHeader Map<String, String> headers) {
-        var b3Header = headers.get("b3");
-        if (b3Header != null) {
-            var trace = b3Header.split("-");
-            var traceId = trace[0];
-            var spanId = trace[1];
-            log.info("[{},{}] Starting to get all movie infos by year: {}", traceId, spanId, year);
-        }
-
-
+    public Flux<MovieInfo> getAllMovieInfos(@RequestParam(value = "year", required = false) Integer year) {
+        log.info("Fetching all movie infos");
         if (year != null) {
             return moviesInfoService.getMovieInfosByYear(year);
         }

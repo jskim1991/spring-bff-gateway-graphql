@@ -95,11 +95,7 @@ public class ReviewHandler {
     }
 
     public Mono<ServerResponse> getReviewList(ServerRequest serverRequest) {
-        String[] b3Header = serverRequest.headers().firstHeader("b3").split("-");
-        var traceId = b3Header[0];
-        var spanId = b3Header[1];
-
-        log.info("[{},{}] Starting to get reviews for movieInfoIds", traceId, spanId);
+        log.info("Fetching all reviews");
         return serverRequest.bodyToFlux(Long.class)
                 .collectList()
                 .flatMap(list -> {

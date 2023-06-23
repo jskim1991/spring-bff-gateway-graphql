@@ -7,6 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Hooks;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 public class MoviesInfoServiceApplication {
 
     public static void main(String[] args) {
+        Hooks.enableAutomaticContextPropagation();
         SpringApplication.run(MoviesInfoServiceApplication.class, args);
     }
 
